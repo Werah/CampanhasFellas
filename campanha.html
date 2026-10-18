@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campanha - CampanhasFellas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+
+  <main class="conteudo">
+    <a class="voltar" href="campanhas.html">← Voltar para campanhas</a>
+
+    <section class="banner" id="banner"></section>
+
+    <div class="layout-campanha">
+      <!-- Esquerda: personagens -->
+      <aside class="painel">
+        <div class="painel-titulo">
+          <h2>Personagens</h2>
+          <button class="pequeno primario" id="btn-novo-personagem">+ Novo</button>
+        </div>
+        <div class="lista-personagens" id="lista-personagens"></div>
+      </aside>
+
+      <!-- Direita: abas -->
+      <section class="painel">
+        <nav class="abas" id="abas">
+          <button data-aba="descricao" class="ativo">Descrição</button>
+          <button data-aba="sessoes">Sessões</button>
+          <button data-aba="bau">Baú do grupo</button>
+        </nav>
+        <div id="conteudo-aba"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal: personagem -->
+  <dialog id="modal-personagem">
+    <form method="dialog">
+      <h2 class="titulo-modal">Novo personagem</h2>
+      <label>Nome*
+        <input type="text" name="nome" required>
+      </label>
+      <div class="duas-colunas">
+        <label>Raça / Classe
+          <input type="text" name="classe" placeholder="Elfo Mago nv. 3">
+        </label>
+        <label>Jogador
+          <select name="fellaId"></select>
+        </label>
+      </div>
+      <div class="campo">Imagem (opcional)
+        <div class="campo-imagem" id="campo-imagem-personagem">
+          <div class="preview-imagem"></div>
+          <div class="botoes-imagem">
+            <label class="botao pequeno">Escolher imagem
+              <input type="file" accept="image/*" hidden>
+            </label>
+            <button type="button" class="pequeno perigo btn-remover-imagem">Remover</button>
+          </div>
+        </div>
+      </div>
+      <label>Descrição
+        <textarea name="descricao" placeholder="História, aparência, objetivos..."></textarea>
+      </label>
+      <p class="erro"></p>
+      <div class="botoes-modal">
+        <button type="button" class="perigo esquerda btn-excluir">Excluir</button>
+        <button type="button" class="btn-cancelar">Cancelar</button>
+        <button type="submit" class="primario">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: descrição da campanha -->
+  <dialog id="modal-descricao">
+    <form method="dialog">
+      <h2>Descrição da campanha</h2>
+      <label>
+        <textarea name="descricao" rows="12"></textarea>
+      </label>
+      <p class="erro"></p>
+      <div class="botoes-modal">
+        <button type="button" class="btn-cancelar">Cancelar</button>
+        <button type="submit" class="primario">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: sessão -->
+  <dialog id="modal-sessao">
+    <form method="dialog">
+      <h2 class="titulo-modal">Nova sessão</h2>
+      <div class="duas-colunas">
+        <label>Data*
+          <input type="date" name="data" required>
+        </label>
+        <label>Horário
+          <input type="time" name="hora">
+        </label>
+      </div>
+      <label>O que aconteceu
+        <textarea name="resumo" rows="6" placeholder="Resumo da sessão..."></textarea>
+      </label>
+      <label>Notas (aparecem no cronograma)
+        <input type="text" name="notas" placeholder="Onde vai ser, o que levar...">
+      </label>
+      <p class="erro"></p>
+      <div class="botoes-modal">
+        <button type="button" class="perigo esquerda btn-excluir">Excluir</button>
+        <button type="button" class="btn-cancelar">Cancelar</button>
+        <button type="submit" class="primario">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: item do baú -->
+  <dialog id="modal-item">
+    <form method="dialog">
+      <h2 class="titulo-modal">Novo item</h2>
+      <div class="duas-colunas" style="grid-template-columns: 1fr 90px;">
+        <label>Item*
+          <input type="text" name="nome" required>
+        </label>
+        <label>Qtd.
+          <input type="number" name="quantidade" min="0" value="1">
+        </label>
+      </div>
+      <label>Descrição
+        <input type="text" name="descricao" placeholder="Com quem está, pra que serve...">
+      </label>
+      <p class="erro"></p>
+      <div class="botoes-modal">
+        <button type="button" class="perigo esquerda btn-excluir">Excluir</button>
+        <button type="button" class="btn-cancelar">Cancelar</button>
+        <button type="submit" class="primario">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/banco.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/campanha.js"></script>
+</body>
+</html>

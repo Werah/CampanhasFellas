@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma - CampanhasFellas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+
+  <main class="conteudo">
+    <div class="cabecalho-pagina">
+      <h1>Cronograma</h1>
+      <div class="navegacao-mes">
+        <button id="btn-anterior">◀</button>
+        <h2 id="nome-mes"></h2>
+        <button id="btn-proximo">▶</button>
+        <button id="btn-hoje">Hoje</button>
+      </div>
+    </div>
+    <p class="info" style="color: var(--texto-2); margin-top: -8px;">Clique num dia para marcar uma sessão, ou numa sessão para editar.</p>
+
+    <div class="calendario" id="calendario"></div>
+
+    <section class="proximas">
+      <h2>Próximas sessões</h2>
+      <ul id="lista-proximas"></ul>
+    </section>
+  </main>
+
+  <dialog id="modal">
+    <form id="form" method="dialog">
+      <h2 id="titulo-modal">Nova sessão</h2>
+      <label>Campanha*
+        <select name="campanhaId" id="sel-campanha" required></select>
+      </label>
+      <div class="duas-colunas">
+        <label>Data*
+          <input type="date" name="data" required>
+        </label>
+        <label>Horário
+          <input type="time" name="hora">
+        </label>
+      </div>
+      <div id="bloco-repetir">
+        <label class="check">
+          <input type="checkbox" name="repetir">
+          Repetir <span id="texto-repetir">toda terça-feira</span>
+        </label>
+        <div class="duas-colunas" id="opcoes-repetir" hidden>
+          <label>Frequência
+            <select name="intervalo">
+              <option value="1">Toda semana</option>
+              <option value="2">A cada 2 semanas</option>
+              <option value="3">A cada 3 semanas</option>
+              <option value="4">A cada 4 semanas</option>
+            </select>
+          </label>
+          <label>Até
+            <input type="date" name="ate">
+          </label>
+        </div>
+      </div>
+      <p class="info aviso-serie" id="aviso-serie" hidden>↻ Essa sessão faz parte de uma série que se repete.</p>
+      <label>Notas
+        <textarea name="notas" placeholder="Onde vai ser, o que levar..."></textarea>
+      </label>
+      <p class="erro" id="erro"></p>
+      <div class="botoes-modal">
+        <button type="button" class="perigo esquerda" id="btn-excluir">Excluir</button>
+        <button type="button" class="perigo" id="btn-excluir-serie">Excluir esta e as próximas</button>
+        <button type="button" id="btn-cancelar">Cancelar</button>
+        <button type="submit" class="primario">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/banco.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/cronograma.js"></script>
+</body>
+</html>

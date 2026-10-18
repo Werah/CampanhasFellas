@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampanhasFellas - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="tela-login">
+    <div class="caixa-login">
+      <h1>CampanhasFellas</h1>
+      <p>Entre para ver as campanhas do grupo</p>
+      <form id="form-login">
+        <label>Login
+          <input type="text" id="usuario" autocomplete="username" required autofocus>
+        </label>
+        <label>Senha
+          <input type="password" id="senha" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="primario">Entrar</button>
+        <p class="erro" id="erro"></p>
+      </form>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/banco.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    // Já logado? Vai direto pra home
+    sessaoPronta.then(sessao => {
+      if (sessao) window.location.href = 'home.html';
+    });
+
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const erro = document.getElementById('erro');
+      erro.textContent = '';
+      try {
+        await entrar(document.getElementById('usuario').value, document.getElementById('senha').value);
+        window.location.href = 'home.html';
+      } catch (err) {
+        erro.textContent = err.message || 'Não foi possível entrar';
+      }
+    });
+  </script>
+</body>
+</html>
