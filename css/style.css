@@ -469,6 +469,14 @@ dialog.recortador { width: min(760px, calc(100vw - 32px)); }
 .recortador .cropper-line, .recortador .cropper-point { background-color: var(--ouro); }
 .recortador .cropper-point { width: 10px; height: 10px; opacity: 1; }
 .recortador .cropper-modal { background-color: #000; opacity: 0.6; }
+.recortador .faixa-visivel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed rgba(255, 255, 255, 0.85);
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.85);
+  pointer-events: none; /* não atrapalha arrastar o quadro */
+}
 
 /* ---------- Página da campanha ---------- */
 
@@ -563,8 +571,9 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
 .painel-titulo h2 { margin: 0; font-size: 1.15rem; }
 
 /* Personagens em barras horizontais, coladas umas nas outras.
-   A altura depende da tela (não da coluna), entre 5% e 15% da altura da tela:
-   10% normalmente e 15% com o mouse em cima, empurrando as de baixo. */
+   A altura depende da tela (não da coluna), entre 10% e 15% da altura da tela:
+   10% normalmente e 15% com o mouse em cima, empurrando as de baixo.
+   (O recorte da imagem em campanha.js usa esses mesmos 10% e 15%.) */
 .lista-personagens { display: flex; flex-direction: column; }
 .lista-personagens .vazio { margin: 16px; }
 
@@ -572,7 +581,7 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
   position: relative;
   flex: 0 0 auto;
   height: 10vh;
-  min-height: 5vh;
+  min-height: 10vh;
   max-height: 15vh;
   display: flex;
   flex-direction: column;

@@ -224,12 +224,20 @@ function criarEditor(idModal, { colecao, titulos, preencher, coletar, nomeItem, 
   };
 }
 
-// Recorte 2:1 (bem largo), parecido com a barra do personagem aberta;
-// com a barra fechada aparece a faixa do meio do recorte
+// Altura das barras de personagem, em fração da altura da tela (igual ao CSS)
+const BARRA_FECHADA = 0.10;
+const BARRA_ABERTA = 0.15;
+
+// O recorte tem o formato da barra aberta: largura da coluna de personagens x 15% da tela.
+// A faixa tracejada no meio mostra o que aparece com a barra fechada (10% da tela).
 const campoImagemPersonagem = ligarCampoImagem(
   document.getElementById('campo-imagem-personagem'),
   () => `<div class="sem-imagem" style="--cor: ${esc(campanha.cor)}">${D20_SVG}</div>`,
-  { proporcao: 2 },
+  {
+    proporcao: () => document.querySelector('.coluna-personagens').getBoundingClientRect().width
+      / (window.innerHeight * BARRA_ABERTA),
+    faixaVisivel: BARRA_FECHADA / BARRA_ABERTA,
+  },
 );
 
 const editorPersonagem = criarEditor('modal-personagem', {

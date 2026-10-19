@@ -55,16 +55,21 @@ function redimensionarImagem(arquivo, maximo = 1000) {
 /**
  * Abre um popup para escolher qual parte da imagem usar.
  * O quadro de recorte pode ser arrastado e redimensionado, mantendo a proporção largura/altura.
+ * Com "faixaVisivel" (ex.: 2/3), desenha dentro do quadro uma faixa tracejada no meio,
+ * com essa fração da altura, mostrando o que aparece quando a barra está fechada.
  * Devolve a data URL (JPEG) da parte escolhida, ou null se a pessoa cancelar.
  * Precisa do Cropper.js carregado na página.
  */
-function recortarImagem(arquivo, proporcao) {
+function recortarImagem(arquivo, proporcao, faixaVisivel) {
   return new Promise(resolve => {
     const dialog = document.createElement('dialog');
     dialog.className = 'recortador';
     dialog.innerHTML = `
       <h2>Escolha a parte da imagem</h2>
-      <p class="info">Arraste o quadro e puxe os cantos para escolher o que vai aparecer.</p>
+      <p class="info">
+        Arraste o quadro e puxe os cantos para escolher o que vai aparecer.
+        ${faixaVisivel ? 'A faixa tracejada é o que aparece com a barra fechada; o quadro inteiro, com o mouse em cima.' : ''}
+      </p>
       <div class="area-recorte"><img alt=""></div>
       <div class="botoes-modal">
         <button type="button" class="btn-cancelar">Cancelar</button>
@@ -97,6 +102,14 @@ function recortarImagem(arquivo, proporcao) {
         scalable: false,
         background: false,
         toggleDragModeOnDblclick: false,
+        ready() {
+          if (!faixaVisivel) return;
+          // A faixa acompanha o quadro porque fica dentro dele, em porcentagem
+          const faixa = document.createElement('div');
+          faixa.className = 'faixa-visivel';
+          faixa.style.top = faixa.style.bottom = `${((1 - faixaVisivel) / 2) * 100}%`;
+          dialog.querySelector('.cropper-crop-box').appendChild(faixa);
+        },
       });
     };
     img.onerror = () => {
@@ -126,9 +139,10 @@ function recortarImagem(arquivo, proporcao) {
  *     <button type="button" class="pequeno perigo btn-remover-imagem">Remover</button>
  *   </div>
  * "semImagem" devolve o HTML mostrado quando não tem imagem.
- * Com { proporcao: 2 } (largura/altura), abre o popup de recorte ao escolher a imagem.
+ * Com { proporcao } (largura/altura, um número ou uma função que calcula na hora),
+ * abre o popup de recorte ao escolher a imagem. "faixaVisivel" vai junto para o popup.
  */
-function ligarCampoImagem(raiz, semImagem, { proporcao } = {}) {
+function ligarCampoImagem(raiz, semImagem, { proporcao, faixaVisivel } = {}) {
   const preview = raiz.querySelector('.preview-imagem');
   const input = raiz.querySelector('input[type="file"]');
   const btnRemover = raiz.querySelector('.btn-remover-imagem');
@@ -149,7 +163,7 @@ function ligarCampoImagem(raiz, semImagem, { proporcao } = {}) {
     if (!arquivo) return;
     try {
       const resultado = proporcao
-        ? await recortarImagem(arquivo, proporcao)
+        ? await recortarImagem(arquivo, typeof proporcao === 'function' ? proporcao() : proporcao, faixaVisivel)
         : await redimensionarImagem(arquivo);
       if (resultado === null) return; // cancelou o recorte: fica como estava
       nova = resultado;
