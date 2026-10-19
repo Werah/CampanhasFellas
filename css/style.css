@@ -170,34 +170,95 @@ textarea { resize: vertical; min-height: 70px; }
 .caixa-login form { text-align: left; }
 .caixa-login button { width: 100%; margin-top: 8px; padding: 10px; }
 
-/* ---------- Home ---------- */
+/* ---------- Home: três divisórias que ocupam a tela ---------- */
 
-.boas-vindas { text-align: center; margin: 40px 0 32px; }
-.boas-vindas h1 { color: var(--ouro); font-size: 2.4rem; margin: 0 0 8px; }
-.boas-vindas p { color: var(--texto-2); margin: 0; }
-
-.menu-principal {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+body.pagina-home {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.menu-principal a {
-  display: block;
+.divisorias { flex: 1; display: flex; min-height: 0; }
+
+.divisoria {
+  --cor: var(--ouro);
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  overflow: hidden;
+  text-align: center;
   text-decoration: none;
   color: var(--texto);
-  background: var(--card);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  padding: 32px 20px;
-  text-align: center;
-  transition: transform 0.15s, border-color 0.15s;
+  border-right: 1px solid var(--borda);
+  background:
+    radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--cor) 18%, transparent), transparent 60%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.5));
+  transition: flex-grow 0.5s ease;
 }
 
-.menu-principal a:hover { transform: translateY(-4px); border-color: var(--ouro); }
-.menu-principal .icone { font-size: 2.6rem; display: block; margin-bottom: 10px; }
-.menu-principal .titulo { font-size: 1.4rem; color: var(--ouro-2); display: block; }
-.menu-principal small { color: var(--texto-2); display: block; margin-top: 6px; }
+.divisoria:last-child { border-right: none; }
+
+/* Brilho mais forte e ícone gigante apagado ao fundo */
+.divisoria::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--cor) 32%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.divisoria::after {
+  content: attr(data-icone);
+  position: absolute;
+  bottom: -0.15em;
+  right: -0.1em;
+  font-size: min(40vh, 22rem);
+  line-height: 1;
+  opacity: 0.05;
+  filter: grayscale(1);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  pointer-events: none;
+}
+
+.divisoria > * { position: relative; z-index: 1; }
+
+.divisoria .icone {
+  font-size: 4rem;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--cor) 70%, transparent));
+  transition: transform 0.5s ease;
+}
+
+.divisoria .titulo {
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  color: var(--cor);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+
+.divisoria small {
+  color: var(--texto-2);
+  font-size: 1rem;
+  max-width: 28ch;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Passou o mouse: cresce e empurra as outras */
+.divisoria:hover { flex-grow: 1.8; }
+.divisoria:hover::before { opacity: 1; }
+.divisoria:hover::after { opacity: 0.09; transform: scale(1.05); }
+.divisoria:hover .icone { transform: scale(1.25); }
+.divisoria:hover small { opacity: 1; transform: none; }
 
 /* ---------- Cards (campanhas / fellas) ---------- */
 
@@ -421,9 +482,10 @@ label.check input { width: auto; margin: 0; accent-color: var(--ouro); }
 .banner h1 { margin: 0 0 6px; font-size: 2rem; text-shadow: 0 2px 6px #000; }
 .banner .info { color: var(--texto-2); margin: 0; }
 
+/* Personagens ocupam 1/3 da largura, as abas 2/3 */
 .layout-campanha {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(260px, 1fr) 2fr;
   gap: 24px;
   align-items: start;
 }
@@ -444,51 +506,68 @@ label.check input { width: auto; margin: 0; accent-color: var(--ouro); }
 
 .painel-titulo h2 { margin: 0; font-size: 1.15rem; }
 
-.lista-personagens { display: flex; flex-direction: column; gap: 8px; }
+/* Personagens em barras horizontais: dividem a altura e a do mouse cresce empurrando as outras */
+.lista-personagens { display: flex; flex-direction: column; gap: 6px; }
+.lista-personagens.com-barras { height: 70vh; min-height: 380px; overflow-y: auto; }
 
 .personagem {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 72px;
   display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 10px;
-  background: var(--bg-2);
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 12px 16px;
+  overflow: hidden;
+  cursor: pointer;
   border: 1px solid var(--borda);
   border-radius: 8px;
-  cursor: pointer;
-}
-
-.personagem:hover { border-color: var(--ouro); }
-
-/* Personagem com imagem: a imagem vira o fundo e o texto fica por cima */
-.personagem.com-imagem {
-  min-height: 110px;
-  align-items: flex-end;
-  padding: 12px;
+  /* Escurecido por cima, imagem do personagem (se tiver) e fundo na cor da campanha */
   background:
-    linear-gradient(90deg, rgba(12, 9, 18, 0.88) 0%, rgba(12, 9, 18, 0.45) 60%, rgba(12, 9, 18, 0.1) 100%),
-    var(--img) center 25% / cover no-repeat;
+    linear-gradient(90deg, rgba(12, 9, 18, 0.9) 0%, rgba(12, 9, 18, 0.5) 55%, rgba(12, 9, 18, 0.15) 100%),
+    var(--img, none) center 25% / cover no-repeat,
+    linear-gradient(135deg, color-mix(in srgb, var(--cor, var(--ouro)) 40%, var(--bg-2)), var(--bg-2));
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  transition: flex-grow 0.45s ease, border-color 0.2s;
 }
 
-.personagem.com-imagem strong { font-size: 1.05rem; }
-.personagem.com-imagem small { color: #ddd3ec; }
+.personagem:hover { flex-grow: 3; border-color: var(--cor, var(--ouro)); }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  font-family: 'Cinzel', serif;
+.personagem > * { position: relative; z-index: 1; }
+.personagem strong { font-family: 'Cinzel', Georgia, serif; font-size: 1.1rem; letter-spacing: 0.5px; }
+.personagem small { color: #ddd3ec; }
+
+/* Sem imagem: iniciais grandes e apagadas à direita */
+.personagem .marca-dagua {
+  position: absolute;
+  z-index: 0;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 3.6rem;
   font-weight: 700;
-  color: #fff;
-  background: var(--cor, var(--ouro));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  color: var(--cor, var(--ouro));
+  opacity: 0.25;
 }
 
-.personagem strong { display: block; }
-.personagem small { color: var(--texto-2); }
+/* A descrição aparece quando a barra cresce */
+.personagem .desc {
+  margin: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  font-size: 0.88rem;
+  color: var(--texto);
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  transition: max-height 0.45s ease, opacity 0.3s ease, margin 0.45s ease;
+}
+
+.personagem:hover .desc { max-height: 9em; opacity: 1; margin-top: 6px; }
 
 .abas { display: flex; gap: 4px; border-bottom: 1px solid var(--borda); margin-bottom: 16px; }
 
@@ -541,4 +620,13 @@ label.check input { width: auto; margin: 0; accent-color: var(--ouro); }
   .navegacao-mes h2 { min-width: 0; font-size: 1.1rem; }
   .duas-colunas { grid-template-columns: 1fr; }
   .topo { flex-direction: column; }
+
+  /* No celular as divisórias ficam uma embaixo da outra e o texto aparece sempre */
+  .divisorias { flex-direction: column; }
+  .divisoria { border-right: none; border-bottom: 1px solid var(--borda); gap: 6px; }
+  .divisoria:last-child { border-bottom: none; }
+  .divisoria .icone { font-size: 2.6rem; }
+  .divisoria small { opacity: 1; transform: none; font-size: 0.9rem; }
+  .divisoria::after { font-size: 9rem; }
+  .lista-personagens.com-barras { height: 60vh; min-height: 300px; }
 }

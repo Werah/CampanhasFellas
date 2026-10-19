@@ -71,18 +71,18 @@ function iniciais(nome) {
 
 function desenharPersonagens() {
   const lista = document.getElementById('lista-personagens');
+  lista.classList.toggle('com-barras', personagens.length > 0);
   if (personagens.length === 0) {
     lista.innerHTML = '<p class="vazio" style="padding: 20px 10px;">Nenhum personagem ainda.</p>';
     return;
   }
   lista.innerHTML = personagens.map(p => `
-    <div class="personagem ${p.imagem ? 'com-imagem' : ''}" data-id="${p.id}" title="${esc(p.descricao)}"
+    <div class="personagem" data-id="${p.id}"
          style="--cor: ${esc(campanha.cor)}; ${p.imagem ? `--img: url('${urlImagem(p.imagem)}')` : ''}">
-      ${p.imagem ? '' : `<div class="avatar">${esc(iniciais(p.nome))}</div>`}
-      <div>
-        <strong>${esc(p.nome)}</strong>
-        <small>${[esc(p.classe), esc(nickFella(p.fellaId))].filter(Boolean).join(' · ') || '&nbsp;'}</small>
-      </div>
+      ${p.imagem ? '' : `<span class="marca-dagua">${esc(iniciais(p.nome))}</span>`}
+      <strong>${esc(p.nome)}</strong>
+      <small>${[esc(p.classe), esc(nickFella(p.fellaId))].filter(Boolean).join(' · ') || '&nbsp;'}</small>
+      ${p.descricao ? `<p class="desc">${esc(p.descricao)}</p>` : ''}
     </div>
   `).join('');
 }
