@@ -8,26 +8,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="pagina-campanha">
   <header class="topo" id="topo"></header>
 
-  <main class="conteudo">
-    <a class="voltar" href="campanhas.html">← Voltar para campanhas</a>
-
+  <main class="campanha-tela">
+    <!-- Topo: imagem e título da campanha de ponta a ponta -->
     <section class="banner" id="banner"></section>
 
     <div class="layout-campanha">
-      <!-- Esquerda: personagens -->
-      <aside class="painel">
-        <div class="painel-titulo">
-          <h2>Personagens</h2>
-          <button class="pequeno primario" id="btn-novo-personagem">+ Novo</button>
-        </div>
+      <!-- Esquerda: personagens em barras -->
+      <aside class="coluna-personagens">
         <div class="lista-personagens" id="lista-personagens"></div>
+        <button class="novo-personagem" id="btn-novo-personagem">+ Novo personagem</button>
       </aside>
 
       <!-- Direita: abas -->
-      <section class="painel">
+      <section class="coluna-abas">
         <nav class="abas" id="abas">
           <button data-aba="descricao" class="ativo">Descrição</button>
           <button data-aba="sessoes">Sessões</button>

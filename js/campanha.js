@@ -25,7 +25,7 @@ async function carregar() {
       api('GET', `/itens${q}`),
     ]);
   } catch (e) {
-    document.querySelector('.conteudo').innerHTML = `<p class="vazio">${esc(e.message)} — <a href="campanhas.html">voltar</a></p>`;
+    document.querySelector('.campanha-tela').innerHTML = `<p class="vazio" style="margin: 24px;">${esc(e.message)} — <a href="campanhas.html">voltar</a></p>`;
     return;
   }
   document.title = `${campanha.nome} - CampanhasFellas`;
@@ -52,6 +52,7 @@ function desenharBanner() {
   const jogadores = c.jogadores.map(nickFella).filter(Boolean).join(', ');
   document.getElementById('banner').innerHTML = `
     ${capaCampanha(c)}
+    <a class="voltar" href="campanhas.html">← Campanhas</a>
     <div class="sobre-banner">
       <div class="linha-titulo" style="justify-content: flex-start; gap: 12px;">
         <h1>${esc(c.nome)}</h1>
@@ -72,6 +73,7 @@ function iniciais(nome) {
 function desenharPersonagens() {
   const lista = document.getElementById('lista-personagens');
   lista.classList.toggle('com-barras', personagens.length > 0);
+  lista.style.setProperty('--qtd', personagens.length);
   if (personagens.length === 0) {
     lista.innerHTML = '<p class="vazio" style="padding: 20px 10px;">Nenhum personagem ainda.</p>';
     return;
