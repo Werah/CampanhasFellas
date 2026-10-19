@@ -72,8 +72,6 @@ function iniciais(nome) {
 
 function desenharPersonagens() {
   const lista = document.getElementById('lista-personagens');
-  lista.classList.toggle('com-barras', personagens.length > 0);
-  lista.style.setProperty('--qtd', personagens.length);
   if (personagens.length === 0) {
     lista.innerHTML = '<p class="vazio" style="padding: 20px 10px;">Nenhum personagem ainda.</p>';
     return;
@@ -226,9 +224,12 @@ function criarEditor(idModal, { colecao, titulos, preencher, coletar, nomeItem, 
   };
 }
 
+// Recorte 2:1 (bem largo), parecido com a barra do personagem aberta;
+// com a barra fechada aparece a faixa do meio do recorte
 const campoImagemPersonagem = ligarCampoImagem(
   document.getElementById('campo-imagem-personagem'),
   () => `<div class="sem-imagem" style="--cor: ${esc(campanha.cor)}">${D20_SVG}</div>`,
+  { proporcao: 2 },
 );
 
 const editorPersonagem = criarEditor('modal-personagem', {

@@ -53,6 +53,72 @@ function redimensionarImagem(arquivo, maximo = 1000) {
 }
 
 /**
+ * Abre um popup para escolher qual parte da imagem usar.
+ * O quadro de recorte pode ser arrastado e redimensionado, mantendo a proporção largura/altura.
+ * Devolve a data URL (JPEG) da parte escolhida, ou null se a pessoa cancelar.
+ * Precisa do Cropper.js carregado na página.
+ */
+function recortarImagem(arquivo, proporcao) {
+  return new Promise(resolve => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'recortador';
+    dialog.innerHTML = `
+      <h2>Escolha a parte da imagem</h2>
+      <p class="info">Arraste o quadro e puxe os cantos para escolher o que vai aparecer.</p>
+      <div class="area-recorte"><img alt=""></div>
+      <div class="botoes-modal">
+        <button type="button" class="btn-cancelar">Cancelar</button>
+        <button type="button" class="primario btn-usar">Usar esta parte</button>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+
+    const img = dialog.querySelector('img');
+    const url = URL.createObjectURL(arquivo);
+    let cropper = null;
+
+    function fechar(resultado) {
+      if (cropper) cropper.destroy();
+      URL.revokeObjectURL(url);
+      dialog.close();
+      dialog.remove();
+      resolve(resultado);
+    }
+
+    img.onload = () => {
+      cropper = new Cropper(img, {
+        aspectRatio: proporcao,
+        viewMode: 1,          // o quadro não sai de cima da imagem
+        autoCropArea: 0.9,
+        dragMode: 'none',     // arrastar fora do quadro não faz nada
+        zoomable: false,
+        movable: false,
+        rotatable: false,
+        scalable: false,
+        background: false,
+        toggleDragModeOnDblclick: false,
+      });
+    };
+    img.onerror = () => {
+      alert('Não deu pra ler essa imagem');
+      fechar(null);
+    };
+
+    dialog.querySelector('.btn-cancelar').addEventListener('click', () => fechar(null));
+    dialog.addEventListener('cancel', e => { e.preventDefault(); fechar(null); }); // tecla Esc
+    dialog.querySelector('.btn-usar').addEventListener('click', () => {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200, imageSmoothingQuality: 'high' });
+      fechar(canvas.toDataURL('image/jpeg', 0.85));
+    });
+
+    // Abre antes de carregar a imagem, para o Cropper medir o tamanho certo
+    dialog.showModal();
+    img.src = url;
+  });
+}
+
+/**
  * Liga um bloco de escolher imagem dentro de um formulário:
  *   <div class="campo-imagem">
  *     <div class="preview-imagem"></div>
@@ -60,8 +126,9 @@ function redimensionarImagem(arquivo, maximo = 1000) {
  *     <button type="button" class="pequeno perigo btn-remover-imagem">Remover</button>
  *   </div>
  * "semImagem" devolve o HTML mostrado quando não tem imagem.
+ * Com { proporcao: 2 } (largura/altura), abre o popup de recorte ao escolher a imagem.
  */
-function ligarCampoImagem(raiz, semImagem) {
+function ligarCampoImagem(raiz, semImagem, { proporcao } = {}) {
   const preview = raiz.querySelector('.preview-imagem');
   const input = raiz.querySelector('input[type="file"]');
   const btnRemover = raiz.querySelector('.btn-remover-imagem');
@@ -77,14 +144,19 @@ function ligarCampoImagem(raiz, semImagem) {
   }
 
   input.addEventListener('change', async () => {
-    if (!input.files[0]) return;
+    const arquivo = input.files[0];
+    input.value = ''; // deixa escolher o mesmo arquivo de novo depois
+    if (!arquivo) return;
     try {
-      nova = await redimensionarImagem(input.files[0]);
+      const resultado = proporcao
+        ? await recortarImagem(arquivo, proporcao)
+        : await redimensionarImagem(arquivo);
+      if (resultado === null) return; // cancelou o recorte: fica como estava
+      nova = resultado;
       desenhar();
     } catch (e) {
       alert(e.message);
     }
-    input.value = '';
   });
 
   btnRemover.addEventListener('click', () => {
