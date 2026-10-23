@@ -571,18 +571,19 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
 .painel-titulo h2 { margin: 0; font-size: 1.15rem; }
 
 /* Personagens em barras horizontais, coladas umas nas outras.
-   A altura depende da tela (não da coluna), entre 10% e 15% da altura da tela:
-   10% normalmente e 15% com o mouse em cima, empurrando as de baixo.
-   (O recorte da imagem em campanha.js usa esses mesmos 10% e 15%.) */
+   A altura depende da tela (não da coluna), entre 15% e 20% da altura da tela:
+   15% normalmente e 20% com o mouse em cima, empurrando as de baixo.
+   A imagem ocupa os 70% da direita da barra.
+   (O recorte da imagem em campanha.js usa esses mesmos 15%, 20% e 70%.) */
 .lista-personagens { display: flex; flex-direction: column; }
 .lista-personagens .vazio { margin: 16px; }
 
 .personagem {
   position: relative;
   flex: 0 0 auto;
-  height: 10vh;
-  min-height: 10vh;
-  max-height: 15vh;
+  height: 15vh;
+  min-height: 15vh;
+  max-height: 20vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -591,17 +592,39 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
   overflow: hidden;
   cursor: pointer;
   border-bottom: 1px solid rgba(0, 0, 0, 0.45);
-  /* Escurecido por cima, imagem do personagem (se tiver) e fundo na cor da campanha */
+  /* Sem imagem: escurecido por cima e fundo na cor da campanha */
   background:
     linear-gradient(90deg, rgba(12, 9, 18, 0.9) 0%, rgba(12, 9, 18, 0.5) 55%, rgba(12, 9, 18, 0.15) 100%),
-    var(--img, none) center / cover no-repeat,
     linear-gradient(135deg, color-mix(in srgb, var(--cor, var(--ouro)) 40%, var(--bg-2)), var(--bg-2));
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   transition: height 0.45s ease, box-shadow 0.3s ease;
 }
 
+/* Com imagem: os 30% da esquerda são um degradê na cor da imagem
+   (--cor-img, calculada no campanha.js; até lá usa a cor da campanha),
+   mais escuro na ponta para o nome continuar legível */
+.personagem.com-imagem {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--cor-img, var(--cor, var(--ouro))) 45%, #0c0912) 0%,
+    color-mix(in srgb, var(--cor-img, var(--cor, var(--ouro))) 85%, #0c0912) 35%,
+    var(--cor-img, var(--cor, var(--ouro))) 100%);
+}
+
+/* A imagem fica nos 70% da direita e some aos poucos na borda esquerda, emendando no degradê */
+.personagem.com-imagem::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 70%;
+  background: var(--img) center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 30%);
+}
+
 /* Passou o mouse: a barra cresce até o máximo, empurra as outras e ganha uma faixa na cor da campanha */
-.personagem:hover { height: 15vh; box-shadow: inset 4px 0 0 var(--cor, var(--ouro)); }
+.personagem:hover { height: 20vh; box-shadow: inset 4px 0 0 var(--cor, var(--ouro)); }
 
 .personagem > * { position: relative; z-index: 1; }
 .personagem strong { font-family: 'Cinzel', Georgia, serif; font-size: 1.1rem; letter-spacing: 0.5px; }
@@ -631,12 +654,12 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
   color: var(--texto);
   white-space: pre-wrap;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   transition: max-height 0.45s ease, opacity 0.3s ease, margin 0.45s ease;
 }
 
-.personagem:hover .desc { max-height: 3em; opacity: 1; margin-top: 4px; }
+.personagem:hover .desc { max-height: 4.5em; opacity: 1; margin-top: 4px; }
 
 .abas { display: flex; gap: 4px; border-bottom: 1px solid var(--borda); margin-bottom: 16px; }
 

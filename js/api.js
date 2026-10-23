@@ -34,6 +34,42 @@ function capaCampanha(c) {
   return `<div class="capa sem-imagem" style="--cor: ${esc(c.cor)}">${D20_SVG}</div>`;
 }
 
+// Cor média da borda esquerda de uma imagem (a parte que emenda no degradê da barra do personagem).
+// Guarda o resultado para não recalcular. Se não der pra ler a imagem, devolve null.
+const coresDeImagem = new Map();
+function corDaBordaEsquerda(url) {
+  if (!coresDeImagem.has(url)) {
+    coresDeImagem.set(url, new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // o Supabase libera, senão o navegador não deixa ler os pixels
+      img.onload = () => {
+        try {
+          // Reduz para 40x20 e tira a média dos 20% da esquerda
+          const canvas = document.createElement('canvas');
+          canvas.width = 40;
+          canvas.height = 20;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(img, 0, 0, 40, 20);
+          const { data } = ctx.getImageData(0, 0, 8, 20);
+          let r = 0, g = 0, b = 0;
+          const n = data.length / 4;
+          for (let i = 0; i < data.length; i += 4) {
+            r += data[i];
+            g += data[i + 1];
+            b += data[i + 2];
+          }
+          resolve(`rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`);
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    }));
+  }
+  return coresDeImagem.get(url);
+}
+
 // Lê um arquivo de imagem e reduz o tamanho antes de enviar (devolve data URL em JPEG)
 function redimensionarImagem(arquivo, maximo = 1000) {
   return new Promise((resolve, reject) => {
