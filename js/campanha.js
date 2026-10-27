@@ -13,6 +13,7 @@ let personagens = [];
 let sessoes = [];
 let itens = [];
 let abaAtual = 'descricao';
+let grupoAtual = 'personagens'; // submenu da esquerda: 'personagens' (com jogador) ou 'companions' (NPCs)
 
 async function carregar() {
   const q = `?campanhaId=${campanhaId}`;
@@ -70,13 +71,30 @@ function iniciais(nome) {
   return nome.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 }
 
+// Personagens têm um jogador; os sem jogador (NPCs) são companions
+function grupoDe(p) {
+  return p.fellaId ? 'personagens' : 'companions';
+}
+
 function desenharPersonagens() {
+  const quantos = { personagens: 0, companions: 0 };
+  personagens.forEach(p => { quantos[grupoDe(p)]++; });
+  document.querySelectorAll('#submenu-personagens button').forEach(b => {
+    const grupo = b.dataset.grupo;
+    b.classList.toggle('ativo', grupo === grupoAtual);
+    b.innerHTML = `${grupo === 'personagens' ? 'Personagens' : 'Companions'} <span class="qtd">${quantos[grupo]}</span>`;
+  });
+  document.getElementById('btn-novo-personagem').textContent =
+    grupoAtual === 'personagens' ? '+ Novo personagem' : '+ Novo companion';
+
   const lista = document.getElementById('lista-personagens');
-  if (personagens.length === 0) {
-    lista.innerHTML = '<p class="vazio" style="padding: 20px 10px;">Nenhum personagem ainda.</p>';
+  const visiveis = personagens.filter(p => grupoDe(p) === grupoAtual);
+  if (visiveis.length === 0) {
+    lista.innerHTML = `<p class="vazio" style="padding: 20px 10px;">
+      ${grupoAtual === 'personagens' ? 'Nenhum personagem ainda.' : 'Nenhum companion ainda.'}</p>`;
     return;
   }
-  lista.innerHTML = personagens.map(p => `
+  lista.innerHTML = visiveis.map(p => `
     <div class="personagem ${p.imagem ? 'com-imagem' : ''}" data-id="${p.id}"
          style="--cor: ${esc(campanha.cor)}; ${p.imagem ? `--img: url('${urlImagem(p.imagem)}')` : ''}">
       ${p.imagem ? '' : `<span class="marca-dagua">${esc(iniciais(p.nome))}</span>`}
@@ -189,14 +207,17 @@ function criarEditor(idModal, { colecao, titulos, preencher, coletar, nomeItem, 
   const btnExcluir = modal.querySelector('.btn-excluir');
   let editando = null;
 
-  async function salvar(acao) {
-    try {
-      await acao();
-      modal.close();
-      await carregar();
-    } catch (e) {
-      erro.textContent = e.message;
-    }
+  // Salvar e excluir passam pela trava contra cliques duplos
+  function salvar(acao) {
+    return semCliqueDuplo(form, async () => {
+      try {
+        await acao();
+        modal.close();
+        await carregar();
+      } catch (e) {
+        erro.textContent = e.message;
+      }
+    });
   }
 
   form.addEventListener('submit', (e) => {
@@ -206,6 +227,8 @@ function criarEditor(idModal, { colecao, titulos, preencher, coletar, nomeItem, 
       const salvo = editando
         ? await api('PUT', `/${colecao}/${editando.id}`, dados)
         : await api('POST', `/${colecao}`, dados);
+      // Se a imagem falhar e a pessoa salvar de novo, edita este em vez de criar outro
+      editando = salvo;
       if (depoisDeSalvar) await depoisDeSalvar(salvo);
     });
   });
@@ -255,8 +278,13 @@ const editorPersonagem = criarEditor('modal-personagem', {
   colecao: 'personagens',
   titulos: ['Novo personagem', 'Editar personagem'],
   nomeItem: p => `o personagem ${p.nome}`,
-  depoisDeSalvar: p => campoImagemPersonagem.salvar('personagens', p.id),
+  depoisDeSalvar: async p => {
+    await campoImagemPersonagem.salvar('personagens', p.id);
+    // Mostra a lista onde ele foi parar (ex.: ganhou ou perdeu o jogador)
+    grupoAtual = grupoDe(p);
+  },
   preencher(form, p) {
+    if (!p && grupoAtual === 'companions') form.querySelector('.titulo-modal').textContent = 'Novo companion';
     campoImagemPersonagem.iniciar(p ? p.imagem : '');
     // Jogadores da campanha primeiro, depois o resto
     const daCampanha = fellas.filter(f => campanha.jogadores.includes(f.id) || f.id === campanha.mestreId);
@@ -328,17 +356,27 @@ const editorDescricao = {
     modalDescricao.showModal();
   },
 };
-modalDescricao.querySelector('form').addEventListener('submit', async (e) => {
+modalDescricao.querySelector('form').addEventListener('submit', (e) => {
   e.preventDefault();
-  try {
-    await api('PUT', `/campanhas/${campanhaId}`, { descricao: e.target.descricao.value });
-    modalDescricao.close();
-    await carregar();
-  } catch (err) {
-    modalDescricao.querySelector('.erro').textContent = err.message;
-  }
+  const form = e.target;
+  semCliqueDuplo(form, async () => {
+    try {
+      await api('PUT', `/campanhas/${campanhaId}`, { descricao: form.descricao.value });
+      modalDescricao.close();
+      await carregar();
+    } catch (err) {
+      modalDescricao.querySelector('.erro').textContent = err.message;
+    }
+  });
 });
 modalDescricao.querySelector('.btn-cancelar').addEventListener('click', () => modalDescricao.close());
+
+document.getElementById('submenu-personagens').addEventListener('click', (e) => {
+  const botao = e.target.closest('button');
+  if (!botao) return;
+  grupoAtual = botao.dataset.grupo;
+  desenharPersonagens();
+});
 
 document.getElementById('btn-novo-personagem').addEventListener('click', () => editorPersonagem.abrir());
 document.getElementById('lista-personagens').addEventListener('click', (e) => {

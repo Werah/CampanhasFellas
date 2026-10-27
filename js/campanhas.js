@@ -109,7 +109,7 @@ async function excluir(id) {
 
 form.cor.addEventListener('input', () => campoImagem.desenhar());
 
-form.addEventListener('submit', async (e) => {
+form.addEventListener('submit', (e) => {
   e.preventDefault();
   const dados = {
     nome: form.nome.value,
@@ -120,16 +120,20 @@ form.addEventListener('submit', async (e) => {
     descricao: form.descricao.value,
     jogadores: [...document.querySelectorAll('#lista-jogadores input:checked')].map(i => i.value),
   };
-  try {
-    const salva = editandoId
-      ? await api('PUT', `/campanhas/${editandoId}`, dados)
-      : await api('POST', '/campanhas', dados);
-    await campoImagem.salvar('campanhas', salva.id);
-    modal.close();
-    await carregar();
-  } catch (e) {
-    erro.textContent = e.message;
-  }
+  semCliqueDuplo(form, async () => {
+    try {
+      const salva = editandoId
+        ? await api('PUT', `/campanhas/${editandoId}`, dados)
+        : await api('POST', '/campanhas', dados);
+      // Se a imagem falhar e a pessoa salvar de novo, edita esta em vez de criar outra
+      editandoId = salva.id;
+      await campoImagem.salvar('campanhas', salva.id);
+      modal.close();
+      await carregar();
+    } catch (e) {
+      erro.textContent = e.message;
+    }
+  });
 });
 
 document.getElementById('filtros').addEventListener('click', (e) => {

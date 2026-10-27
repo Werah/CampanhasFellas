@@ -83,20 +83,22 @@ async function excluir(id) {
   }
 }
 
-form.addEventListener('submit', async (e) => {
+form.addEventListener('submit', (e) => {
   e.preventDefault();
   const dados = {
     nick: form.nick.value,
     observacoes: form.observacoes.value,
   };
-  try {
-    if (editandoId) await api('PUT', `/fellas/${editandoId}`, dados);
-    else await api('POST', '/fellas', dados);
-    modal.close();
-    await carregar();
-  } catch (e) {
-    erro.textContent = e.message;
-  }
+  semCliqueDuplo(form, async () => {
+    try {
+      if (editandoId) await api('PUT', `/fellas/${editandoId}`, dados);
+      else await api('POST', '/fellas', dados);
+      modal.close();
+      await carregar();
+    } catch (e) {
+      erro.textContent = e.message;
+    }
+  });
 });
 
 document.getElementById('btn-novo').addEventListener('click', () => abrir());

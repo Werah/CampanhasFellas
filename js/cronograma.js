@@ -155,7 +155,20 @@ document.getElementById('calendario').addEventListener('click', (e) => {
   if (dia) abrir({ data: dia.dataset.data });
 });
 
-form.addEventListener('submit', async (e) => {
+// Salvar e excluir passam pela trava contra cliques duplos
+function executar(acao) {
+  return semCliqueDuplo(form, async () => {
+    try {
+      await acao();
+      modal.close();
+      await carregar();
+    } catch (e) {
+      erro.textContent = e.message;
+    }
+  });
+}
+
+form.addEventListener('submit', (e) => {
   e.preventDefault();
   const dados = {
     campanhaId: form.campanhaId.value,
@@ -163,7 +176,7 @@ form.addEventListener('submit', async (e) => {
     hora: form.hora.value,
     notas: form.notas.value,
   };
-  try {
+  executar(async () => {
     if (editandoId) {
       await api('PUT', `/sessoes/${editandoId}`, dados);
     } else if (form.repetir.checked) {
@@ -174,35 +187,19 @@ form.addEventListener('submit', async (e) => {
     } else {
       await api('POST', '/sessoes', dados);
     }
-    modal.close();
-    await carregar();
-  } catch (e) {
-    erro.textContent = e.message;
-  }
+  });
 });
 
-btnExcluir.addEventListener('click', async () => {
+btnExcluir.addEventListener('click', () => {
   if (!confirm('Excluir essa sessão?')) return;
-  try {
-    await api('DELETE', `/sessoes/${editandoId}`);
-    modal.close();
-    await carregar();
-  } catch (e) {
-    erro.textContent = e.message;
-  }
+  executar(() => api('DELETE', `/sessoes/${editandoId}`));
 });
 
-btnExcluirSerie.addEventListener('click', async () => {
+btnExcluirSerie.addEventListener('click', () => {
   const s = sessoes.find(x => x.id === editandoId);
   const quantas = sessoes.filter(x => x.serieId === s.serieId && x.data >= s.data).length;
   if (!confirm(`Excluir esta sessão e as próximas da série (${quantas} no total)?`)) return;
-  try {
-    await api('DELETE', `/sessoes/serie/${s.serieId}?aPartirDe=${s.data}`);
-    modal.close();
-    await carregar();
-  } catch (e) {
-    erro.textContent = e.message;
-  }
+  executar(() => api('DELETE', `/sessoes/serie/${s.serieId}?aPartirDe=${s.data}`));
 });
 
 function mudarMes(delta) {

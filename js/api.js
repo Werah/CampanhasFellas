@@ -11,6 +11,24 @@ function esc(texto) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Evita salvar duas vezes com cliques rápidos: enquanto a ação roda, os botões do
+ * formulário ficam desabilitados e novas chamadas para o mesmo formulário são ignoradas.
+ */
+async function semCliqueDuplo(form, acao) {
+  if (form.dataset.salvando) return;
+  form.dataset.salvando = 'sim';
+  // Só desabilita (e depois reabilita) os botões que estavam habilitados
+  const botoes = [...form.querySelectorAll('button')].filter(b => !b.disabled);
+  botoes.forEach(b => { b.disabled = true; });
+  try {
+    return await acao();
+  } finally {
+    delete form.dataset.salvando;
+    botoes.forEach(b => { b.disabled = false; });
+  }
+}
+
 function formatarData(iso) {
   const [a, m, d] = iso.split('-');
   return `${d}/${m}/${a}`;
