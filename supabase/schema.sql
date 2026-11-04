@@ -51,9 +51,10 @@ create table if not exists public.sessoes (
   serie_id     text not null default ''
 );
 
+-- Personagem pode estar numa campanha ou em nenhuma (campanha_id nulo); sem campanha, precisa de jogador
 create table if not exists public.personagens (
   id           text primary key default gen_random_uuid()::text,
-  campanha_id  text not null references public.campanhas(id) on delete cascade,
+  campanha_id  text references public.campanhas(id) on delete cascade,
   nome         text not null check (length(trim(nome)) > 0),
   fella_id     text not null default '',
   classe       text not null default '',
@@ -73,6 +74,17 @@ create index if not exists sessoes_campanha on public.sessoes (campanha_id, data
 create index if not exists sessoes_serie on public.sessoes (serie_id);
 create index if not exists personagens_campanha on public.personagens (campanha_id);
 create index if not exists itens_campanha on public.itens (campanha_id);
+
+-- Bancos criados antes de existir personagem sem campanha
+alter table public.personagens alter column campanha_id drop not null;
+alter table public.personagens drop constraint if exists personagem_com_dono;
+alter table public.personagens add constraint personagem_com_dono check (campanha_id is not null or fella_id <> '');
+
+-- Página Personagens personalizável: o visual de cada fella (fundo, modo, posição/cor dos cartões, imagens do fundo)
+alter table public.fellas add column if not exists pagina jsonb not null default '{}'::jsonb;
+-- Página do personagem: seções de detalhes ([{ "titulo": ..., "texto": ... }]) e a imagem inteira (retrato)
+alter table public.personagens add column if not exists detalhes jsonb not null default '[]'::jsonb;
+alter table public.personagens add column if not exists retrato text not null default '';
 
 -- Campanhas com a contagem de sessões (uma sessão conta como "jogada" quando a data dela já chegou)
 create or replace view public.campanhas_com_contagem
@@ -103,12 +115,31 @@ create trigger impedir_excluir_campanha_jogada
   before delete on public.campanhas
   for each row execute function public.impedir_excluir_campanha_jogada();
 
--- Excluir um fella tira ele das campanhas e dos personagens
+-- Excluir uma campanha não apaga os personagens dos jogadores: eles ficam sem campanha.
+-- Os NPCs (sem jogador) são apagados junto com a campanha.
+create or replace function public.soltar_personagens_da_campanha()
+returns trigger
+language plpgsql
+as $$
+begin
+  update public.personagens set campanha_id = null where campanha_id = old.id and fella_id <> '';
+  return old;
+end
+$$;
+
+drop trigger if exists soltar_personagens_da_campanha on public.campanhas;
+create trigger soltar_personagens_da_campanha
+  before delete on public.campanhas
+  for each row execute function public.soltar_personagens_da_campanha();
+
+-- Excluir um fella tira ele das campanhas e dos personagens.
+-- Os personagens dele que não estão em campanha nenhuma são apagados.
 create or replace function public.limpar_fella_excluido()
 returns trigger
 language plpgsql
 as $$
 begin
+  delete from public.personagens where fella_id = old.id and campanha_id is null;
   update public.campanhas set mestre_id = '' where mestre_id = old.id;
   update public.campanhas set jogadores = array_remove(jogadores, old.id) where old.id = any(jogadores);
   update public.personagens set fella_id = '' where fella_id = old.id;

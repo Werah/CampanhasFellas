@@ -24,7 +24,7 @@ function campanhasDoFella(id) {
 
 function nomeCampanha(id) {
   const c = campanhas.find(x => x.id === id);
-  return c ? c.nome : '';
+  return c ? c.nome : 'sem campanha';
 }
 
 function desenhar() {
@@ -74,6 +74,8 @@ async function excluir(id) {
   const camps = campanhasDoFella(id);
   let msg = `Excluir ${f.nick}?`;
   if (camps.length) msg += `\n\nEle(a) será removido(a) de: ${camps.map(c => c.nome).join(', ')}`;
+  const soltos = personagens.filter(p => p.fellaId === id && !p.campanhaId);
+  if (soltos.length) msg += `\n\nOs personagens dele(a) sem campanha também serão excluídos: ${soltos.map(p => p.nome).join(', ')}`;
   if (!confirm(msg)) return;
   try {
     await api('DELETE', `/fellas/${id}`);

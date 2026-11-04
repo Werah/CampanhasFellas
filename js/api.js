@@ -88,8 +88,9 @@ function corDaBordaEsquerda(url) {
   return coresDeImagem.get(url);
 }
 
-// Lê um arquivo de imagem e reduz o tamanho antes de enviar (devolve data URL em JPEG)
-function redimensionarImagem(arquivo, maximo = 1000) {
+// Lê um arquivo de imagem e reduz o tamanho antes de enviar (devolve data URL em JPEG).
+// Com "manterTransparencia", PNG/WebP/GIF viram PNG (para imagens recortadas, sem fundo).
+function redimensionarImagem(arquivo, maximo = 1000, manterTransparencia = false) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -99,7 +100,8 @@ function redimensionarImagem(arquivo, maximo = 1000) {
       canvas.height = Math.round(img.height * escala);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(img.src);
-      resolve(canvas.toDataURL('image/jpeg', 0.85));
+      const png = manterTransparencia && /image\/(png|webp|gif)/.test(arquivo.type);
+      resolve(png ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.85));
     };
     img.onerror = () => reject(new Error('Não deu pra ler essa imagem'));
     img.src = URL.createObjectURL(arquivo);
@@ -195,13 +197,16 @@ function recortarImagem(arquivo, proporcao, faixaVisivel) {
  * "semImagem" devolve o HTML mostrado quando não tem imagem.
  * Com { proporcao } (largura/altura, um número ou uma função que calcula na hora),
  * abre o popup de recorte ao escolher a imagem. "faixaVisivel" vai junto para o popup.
+ * Com { comRetrato } (personagens), a imagem inteira também é guardada como "retrato",
+ * a imagem grande da página do personagem; remover a imagem remove o retrato junto.
  */
-function ligarCampoImagem(raiz, semImagem, { proporcao, faixaVisivel } = {}) {
+function ligarCampoImagem(raiz, semImagem, { proporcao, faixaVisivel, comRetrato } = {}) {
   const preview = raiz.querySelector('.preview-imagem');
   const input = raiz.querySelector('input[type="file"]');
   const btnRemover = raiz.querySelector('.btn-remover-imagem');
   let atual = ''; // arquivo que o item já tinha
   let nova;       // undefined = não mexeu, string = nova imagem, null = remover
+  let original;   // imagem inteira escolhida (para o retrato)
 
   function desenhar() {
     let src = '';
@@ -221,6 +226,7 @@ function ligarCampoImagem(raiz, semImagem, { proporcao, faixaVisivel } = {}) {
         : await redimensionarImagem(arquivo);
       if (resultado === null) return; // cancelou o recorte: fica como estava
       nova = resultado;
+      original = comRetrato ? await redimensionarImagem(arquivo, 1600) : undefined;
       desenhar();
     } catch (e) {
       alert(e.message);
@@ -229,6 +235,7 @@ function ligarCampoImagem(raiz, semImagem, { proporcao, faixaVisivel } = {}) {
 
   btnRemover.addEventListener('click', () => {
     nova = null;
+    original = undefined;
     desenhar();
   });
 
@@ -236,16 +243,45 @@ function ligarCampoImagem(raiz, semImagem, { proporcao, faixaVisivel } = {}) {
     iniciar(arquivoAtual) {
       atual = arquivoAtual || '';
       nova = undefined;
+      original = undefined;
       desenhar();
     },
     desenhar,
     // Envia a troca (ou remoção) da imagem depois que o item foi salvo
     async salvar(colecao, id) {
-      if (typeof nova === 'string') await api('PUT', `/${colecao}/${id}/imagem`, { dataUrl: nova });
-      else if (nova === null && atual) await api('DELETE', `/${colecao}/${id}/imagem`);
+      if (typeof nova === 'string') {
+        await api('PUT', `/${colecao}/${id}/imagem`, { dataUrl: nova });
+        if (original) await api('PUT', `/${colecao}/${id}/retrato`, { dataUrl: original });
+      } else if (nova === null && atual) {
+        await api('DELETE', `/${colecao}/${id}/imagem`);
+        if (comRetrato) await api('DELETE', `/${colecao}/${id}/retrato`);
+      }
     },
   };
 }
+
+// Tamanho da imagem na barra do personagem da página da campanha (igual ao CSS):
+// altura em fração da altura da tela, largura em fração da largura da barra
+const BARRA_FECHADA = 0.15;
+const BARRA_ABERTA = 0.20;
+const LARGURA_IMAGEM = 0.70;
+
+// Largura da coluna de personagens da página da campanha. Fora dela (página Personagens),
+// estima pelo CSS: 1/3 da tela com no mínimo 260px, ou a tela toda no celular.
+function larguraColunaPersonagens() {
+  const coluna = document.querySelector('.coluna-personagens');
+  if (coluna) return coluna.getBoundingClientRect().width;
+  return window.innerWidth <= 800 ? window.innerWidth : Math.max(260, window.innerWidth / 3);
+}
+
+// Opções do recorte da imagem do personagem (para ligarCampoImagem):
+// o formato é o da área da imagem com a barra aberta (70% da coluna x 20% da tela),
+// e a faixa tracejada no meio mostra o que aparece com a barra fechada (15% da tela).
+const RECORTE_PERSONAGEM = {
+  proporcao: () => larguraColunaPersonagens() * LARGURA_IMAGEM / (window.innerHeight * BARRA_ABERTA),
+  faixaVisivel: BARRA_FECHADA / BARRA_ABERTA,
+  comRetrato: true,
+};
 
 // Monta a barra do topo; "atual" é o nome da página ativa
 function montarTopo(atual) {
@@ -253,6 +289,7 @@ function montarTopo(atual) {
     ['cronograma.html', 'Cronograma'],
     ['campanhas.html', 'Campanhas'],
     ['fellas.html', 'Fellas'],
+    ['personagens.html', 'Personagens'],
   ];
   const nav = links
     .map(([href, nome]) => `<a href="${href}" class="${nome === atual ? 'ativo' : ''}">${nome}</a>`)

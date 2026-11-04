@@ -1,6 +1,6 @@
 # CampanhasFellas
 
-Site do grupo para organizar as campanhas de RPG: cronograma, campanhas e fellas.
+Site do grupo para organizar as campanhas de RPG: cronograma, campanhas, fellas e personagens.
 
 - **Páginas:** HTML, CSS e JavaScript puro, hospedadas de graça no **GitHub Pages**.
 - **Dados, login e imagens:** no **Supabase** (Postgres na nuvem, plano grátis).

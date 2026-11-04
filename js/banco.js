@@ -130,13 +130,19 @@ const { api, urlImagem } = (() => {
     },
     personagens: {
       limpar: b => ({
-        campanhaId: String(b.campanhaId || ''),
+        campanhaId: b.campanhaId ? String(b.campanhaId) : null, // null = não está em campanha nenhuma
         nome: texto(b.nome),
         fellaId: String(b.fellaId || ''),
         classe: texto(b.classe),
         descricao: texto(b.descricao),
+        // Seções da página do personagem: [{ titulo, texto }]
+        detalhes: Array.isArray(b.detalhes)
+          ? b.detalhes.map(d => ({ titulo: texto(d && d.titulo), texto: texto(d && d.texto) })).filter(d => d.titulo || d.texto)
+          : [],
+        // "imagem" e "retrato" ficam de fora: só são trocados pelas funções de imagem
       }),
-      validar: d => (d.nome ? null : 'Nome é obrigatório'),
+      validar: d => (!d.nome ? 'Nome é obrigatório'
+        : !d.campanhaId && !d.fellaId ? 'Personagem sem campanha precisa de um jogador' : null),
       ordem: 'nome',
     },
     itens: {
@@ -188,14 +194,24 @@ const { api, urlImagem } = (() => {
   async function excluir(tabela, id) {
     // Junta as imagens que vão ficar órfãs para apagar depois
     let imagens = [];
+    const imagensDe = pers => pers.flatMap(p => [p.imagem, p.retrato]);
     if (tabela === 'campanhas') {
+      // Só os NPCs são apagados; os personagens dos jogadores ficam sem campanha
       const c = await buscar('campanhas', id);
       const pers = await listar('personagens', id);
-      imagens = [c.imagem, ...pers.map(p => p.imagem)];
+      imagens = [c.imagem, ...imagensDe(pers.filter(p => !p.fellaId))];
+    } else if (tabela === 'fellas') {
+      // Os personagens do fella que não estão em campanha são apagados junto, e as imagens do fundo da página dele
+      const f = await buscar('fellas', id);
+      const pers = await listar('personagens');
+      imagens = [
+        ...imagensDe(pers.filter(p => p.fellaId === id && !p.campanhaId)),
+        ...((f.pagina && f.pagina.enfeites) || []).map(e => e.imagem),
+      ];
     } else if (tabela === 'personagens') {
-      imagens = [(await buscar('personagens', id)).imagem];
+      imagens = imagensDe([await buscar('personagens', id)]);
     }
-    // O banco bloqueia campanha com sessão jogada e apaga sessões/personagens/itens junto
+    // O banco bloqueia campanha com sessão jogada e apaga sessões/NPCs/itens junto
     await rodar(sb.from(tabela).delete().eq('id', id));
     await apagarArquivos(imagens);
     return null;
@@ -242,24 +258,79 @@ const { api, urlImagem } = (() => {
     if (lista.length) await sb.storage.from('imagens').remove(lista); // se falhar, só sobra um arquivo solto
   }
 
-  // Recebe a imagem já redimensionada no navegador (data URL)
-  async function trocarImagem(tabela, id, dataUrl) {
-    const item = await buscar(tabela, id);
+  // Envia uma imagem (data URL) para o bucket e devolve o nome do arquivo
+  async function enviarArquivo(prefixo, dataUrl) {
     const blob = await (await fetch(dataUrl)).blob();
     const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
     // Nome muda a cada envio, então o navegador nunca mostra a imagem antiga do cache
-    const arquivo = `${id}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    const arquivo = `${prefixo}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
     await rodar(sb.storage.from('imagens').upload(arquivo, blob, { contentType: blob.type, cacheControl: '31536000' }));
-    await rodar(sb.from(tabela).update({ imagem: arquivo }).eq('id', id));
-    await apagarArquivos([item.imagem]);
-    return { imagem: arquivo };
+    return arquivo;
   }
 
-  async function removerImagem(tabela, id) {
+  // Recebe a imagem já redimensionada no navegador (data URL).
+  // "coluna" é "imagem" ou, nos personagens, "retrato" (a imagem inteira da página do personagem).
+  async function trocarImagem(tabela, id, dataUrl, coluna = 'imagem') {
     const item = await buscar(tabela, id);
-    await rodar(sb.from(tabela).update({ imagem: '' }).eq('id', id));
-    await apagarArquivos([item.imagem]);
+    const arquivo = await enviarArquivo(id, dataUrl);
+    await rodar(sb.from(tabela).update({ [coluna]: arquivo }).eq('id', id));
+    await apagarArquivos([item[coluna]]);
+    return { [coluna]: arquivo };
+  }
+
+  async function removerImagem(tabela, id, coluna = 'imagem') {
+    const item = await buscar(tabela, id);
+    await rodar(sb.from(tabela).update({ [coluna]: '' }).eq('id', id));
+    await apagarArquivos([item[coluna]]);
     return null;
+  }
+
+  // ---------- Página personalizada do fella (página Personagens) ----------
+
+  const numero = (v, min, max, padrao) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : padrao;
+  };
+  const corValida = c => (/^#[0-9a-fA-F]{6}$/.test(c) ? c : '');
+
+  /**
+   * Salva o visual da página do fella:
+   *   { modo: 'livre' | 'lista', fundo: '#rrggbb',
+   *     cards: { [personagemId]: { x, y, w, h, z, cor } },
+   *     enfeites: [{ id, imagem, x, y, w, h, z }] }   (imagens soltas no fundo)
+   * Enfeite novo vem com "dataUrl" em vez de "imagem": é enviado aqui.
+   * As imagens de enfeites que saíram da página são apagadas do bucket.
+   */
+  async function salvarPagina(id, pagina) {
+    const fella = await buscar('fellas', id);
+    const antes = ((fella.pagina && fella.pagina.enfeites) || []).map(e => e.imagem);
+    const p = pagina || {};
+
+    const cards = {};
+    for (const [pid, c] of Object.entries(p.cards || {})) {
+      cards[pid] = {
+        x: numero(c.x, 0, 1000, 0), y: numero(c.y, 0, 20000, 0),
+        w: numero(c.w, 60, 1000, 320), h: numero(c.h, 40, 2000, 180),
+        z: numero(c.z, -1000, 1000, 1), cor: corValida(c.cor),
+      };
+    }
+
+    const enfeites = [];
+    for (const e of (p.enfeites || []).slice(0, 60)) {
+      const imagem = e.dataUrl ? await enviarArquivo(`enfeite-${id}`, e.dataUrl) : String(e.imagem || '');
+      if (!imagem) continue;
+      enfeites.push({
+        id: String(e.id || crypto.randomUUID()), imagem,
+        x: numero(e.x, -2000, 3000, 0), y: numero(e.y, -2000, 20000, 0),
+        w: numero(e.w, 10, 3000, 200), h: numero(e.h, 10, 3000, 200),
+        z: numero(e.z, -1000, 1000, 0),
+      });
+    }
+
+    const limpa = { modo: p.modo === 'lista' ? 'lista' : 'livre', fundo: corValida(p.fundo), cards, enfeites };
+    await rodar(sb.from('fellas').update({ pagina: limpa }).eq('id', id));
+    await apagarArquivos(antes.filter(a => !enfeites.some(e => e.imagem === a)));
+    return limpa;
   }
 
   // ---------- api(): o ponto de entrada usado pelas páginas ----------
@@ -273,6 +344,8 @@ const { api, urlImagem } = (() => {
    *   api('PUT', '/fellas/123', { nick: 'Bia' })   altera
    *   api('DELETE', '/fellas/123')                 exclui
    *   api('PUT', '/campanhas/123/imagem', { dataUrl })   troca a imagem
+   *   api('PUT', '/personagens/123/retrato', { dataUrl }) troca a imagem inteira do personagem
+   *   api('PUT', '/fellas/123/pagina', { pagina })        salva o visual da página do fella
    *   api('POST', '/sessoes/recorrentes', {...})          cria uma série
    *   api('DELETE', '/sessoes/serie/abc?aPartirDe=AAAA-MM-DD')
    */
@@ -288,7 +361,10 @@ const { api, urlImagem } = (() => {
 
     if (tabela === 'sessoes' && id === 'recorrentes' && metodo === 'POST') return criarSerie(corpo);
     if (tabela === 'sessoes' && id === 'serie' && metodo === 'DELETE') return excluirSerie(extra, url.searchParams.get('aPartirDe'));
-    if (extra === 'imagem') return metodo === 'PUT' ? trocarImagem(tabela, id, corpo.dataUrl) : removerImagem(tabela, id);
+    if (tabela === 'fellas' && extra === 'pagina' && metodo === 'PUT') return salvarPagina(id, corpo.pagina);
+    if (extra === 'imagem' || (tabela === 'personagens' && extra === 'retrato')) {
+      return metodo === 'PUT' ? trocarImagem(tabela, id, corpo.dataUrl, extra) : removerImagem(tabela, id, extra);
+    }
 
     if (!TABELAS[tabela]) throw new Error(`Caminho desconhecido: ${caminho}`);
     if (metodo === 'GET') return id ? buscar(tabela, id) : listar(tabela, url.searchParams.get('campanhaId'));

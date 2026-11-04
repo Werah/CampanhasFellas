@@ -98,6 +98,7 @@ async function excluir(id) {
   const c = campanhas.find(x => x.id === id);
   let msg = `Excluir a campanha "${c.nome}"?`;
   if (c.sessoesTotal > 0) msg += `\n\nAs ${c.sessoesTotal} sessão(ões) agendada(s) também serão removidas.`;
+  msg += '\n\nOs personagens dos jogadores continuam na página Personagens, sem campanha. Os companions (NPCs) são excluídos.';
   if (!confirm(msg)) return;
   try {
     await api('DELETE', `/campanhas/${id}`);

@@ -255,23 +255,10 @@ function criarEditor(idModal, { colecao, titulos, preencher, coletar, nomeItem, 
   };
 }
 
-// Tamanho da imagem na barra do personagem (igual ao CSS):
-// altura em fração da altura da tela, largura em fração da largura da barra
-const BARRA_FECHADA = 0.15;
-const BARRA_ABERTA = 0.20;
-const LARGURA_IMAGEM = 0.70;
-
-// O recorte tem o formato da área da imagem com a barra aberta:
-// 70% da largura da coluna de personagens x 20% da altura da tela.
-// A faixa tracejada no meio mostra o que aparece com a barra fechada (15% da tela).
 const campoImagemPersonagem = ligarCampoImagem(
   document.getElementById('campo-imagem-personagem'),
   () => `<div class="sem-imagem" style="--cor: ${esc(campanha.cor)}">${D20_SVG}</div>`,
-  {
-    proporcao: () => document.querySelector('.coluna-personagens').getBoundingClientRect().width * LARGURA_IMAGEM
-      / (window.innerHeight * BARRA_ABERTA),
-    faixaVisivel: BARRA_FECHADA / BARRA_ABERTA,
-  },
+  RECORTE_PERSONAGEM,
 );
 
 const editorPersonagem = criarEditor('modal-personagem', {
@@ -285,6 +272,9 @@ const editorPersonagem = criarEditor('modal-personagem', {
   },
   preencher(form, p) {
     if (!p && grupoAtual === 'companions') form.querySelector('.titulo-modal').textContent = 'Novo companion';
+    const link = document.getElementById('link-pagina-personagem');
+    link.hidden = !p;
+    if (p) link.href = `personagem.html?id=${p.id}`;
     campoImagemPersonagem.iniciar(p ? p.imagem : '');
     // Jogadores da campanha primeiro, depois o resto
     const daCampanha = fellas.filter(f => campanha.jogadores.includes(f.id) || f.id === campanha.mestreId);

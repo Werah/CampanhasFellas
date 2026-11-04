@@ -194,7 +194,7 @@ body.pagina-home {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 24px;
+  padding: 24px 12px;
   overflow: hidden;
   text-align: center;
   text-decoration: none;
@@ -239,11 +239,12 @@ body.pagina-home {
   transition: transform 0.5s ease;
 }
 
+/* Tamanho pensado para 4 divisórias lado a lado sem cortar "Personagens" */
 .divisoria .titulo {
-  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-size: clamp(1rem, 1.8vw, 2.6rem);
   color: var(--cor);
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
 }
 
@@ -685,6 +686,331 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
 
 .personagem:hover .desc { max-height: 4.5em; opacity: 1; margin-top: 4px; }
 
+/* ---------- Página Personagens ---------- */
+
+.conteudo.largo { max-width: 1300px; }
+
+/* A página ocupa a tela toda: barra dos fellas colada no menu e o palco de ponta a ponta até o fim da tela */
+body.pagina-personagens { display: flex; flex-direction: column; }
+.tela-personagens { flex: 1; display: flex; flex-direction: column; }
+.area-fella { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.area-fella > .vazio { margin: 16px; }
+
+.barra-fellas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 0 16px 0 0;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--borda);
+}
+
+/* Os fellas como abas */
+.lista-fellas { display: flex; min-width: 0; overflow-x: auto; }
+
+.lista-fellas button {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--texto-2);
+}
+
+.lista-fellas button:hover { color: var(--texto); background: var(--card); }
+.lista-fellas button.ativo { color: var(--ouro-2); border-bottom-color: var(--ouro); background: var(--card); }
+.lista-fellas .qtd, .titulo-grupo .qtd { font-size: 0.8rem; opacity: 0.7; }
+
+.titulo-grupo {
+  margin: 0;
+  padding: 18px 20px 8px;
+  font-size: 0.95rem;
+  color: var(--texto-2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.palco.lista > .info { margin: 0; padding: 0 20px 8px; }
+
+.botoes-titulo { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
+
+/* Barra de personalização (fundo, modo, imagens), também de ponta a ponta */
+.barra-edicao {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 10px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--ouro);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.barra-edicao label { margin: 0; }
+.barra-edicao .dica { flex: 1; min-width: 200px; color: var(--texto-2); font-size: 0.85rem; }
+.botoes-edicao { display: flex; gap: 8px; }
+
+.ferramenta { display: flex; align-items: center; gap: 6px; color: var(--texto-2); font-size: 0.9rem; }
+.ferramenta input[type="color"] { width: 44px; height: 30px; margin: 0; cursor: pointer; }
+
+.alternar { display: flex; }
+.alternar button { padding: 4px 12px; font-size: 0.85rem; border-radius: 0; }
+.alternar button:first-child { border-radius: 6px 0 0 6px; }
+.alternar button:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+.alternar button.ativo { background: var(--ouro); border-color: var(--ouro); color: #1b1408; font-weight: 600; }
+
+.ferramentas-item {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--borda);
+}
+
+/* O palco: a área com o fundo que cada fella escolhe */
+.palco {
+  --fundo: var(--bg-2);
+  position: relative;
+  flex: 1 0 auto; /* cresce até o fim da tela, mesmo com pouca coisa */
+  background: var(--fundo);
+  overflow: hidden;
+}
+
+.palco.lista { padding-bottom: 24px; }
+.palco > .vazio { margin: 16px; }
+.palco.personalizando { outline: 2px dashed var(--ouro); outline-offset: -2px; }
+
+/* Modo livre: 1000 unidades de largura, escalado pelo personagens.js */
+.palco-interno {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1000px;
+  transform-origin: 0 0;
+}
+
+.palco .cartao {
+  position: absolute;
+  min-height: 0;
+  max-height: none;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  border-radius: var(--raio);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 0.2s;
+}
+
+.palco .cartao:hover { box-shadow: 0 0 0 2px var(--cor, var(--ouro)), 0 10px 26px rgba(0, 0, 0, 0.5); }
+.palco .cartao .desc { max-height: 3em; opacity: 1; margin-top: 4px; -webkit-line-clamp: 2; }
+
+.enfeite { position: absolute; }
+.enfeite img { display: block; width: 100%; height: 100%; user-select: none; pointer-events: none; }
+
+/* Personalizando: tudo pode ser arrastado */
+.personalizando [data-tipo] { cursor: move; touch-action: none; user-select: none; }
+.personalizando .enfeite { outline: 1px dashed rgba(255, 255, 255, 0.3); }
+.personalizando [data-tipo].selecionado { outline: 2px solid var(--ouro); outline-offset: 2px; }
+.personalizando .cartao:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+
+.palco .alca {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, transparent 45%, var(--ouro) 45%);
+  cursor: nwse-resize;
+}
+
+/* Modo lista: faixas coladas umas nas outras, de ponta a ponta */
+.linhas-personagens { display: flex; flex-direction: column; border-top: 1px solid rgba(0, 0, 0, 0.35); }
+
+.linha-personagem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px 8px 8px;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  border-left: 5px solid var(--cor, var(--ouro));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cor, var(--ouro)) 30%, var(--card)), transparent 75%);
+  transition: background-color 0.15s, padding 0.15s;
+}
+
+a.linha-personagem:hover { background-color: color-mix(in srgb, var(--cor, var(--ouro)) 12%, transparent); padding-left: 14px; }
+
+.linha-personagem .miniatura {
+  flex: 0 0 auto;
+  width: 110px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--img, color-mix(in srgb, var(--cor, var(--ouro)) 35%, var(--bg-2))) center / cover no-repeat;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--cor, var(--ouro));
+}
+
+.texto-linha { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.texto-linha strong { font-family: 'Cinzel', Georgia, serif; }
+.texto-linha small { color: var(--texto-2); }
+.texto-linha .desc { font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cor-linha { display: flex; align-items: center; gap: 6px; }
+.cor-linha input[type="color"] { width: 44px; height: 30px; margin: 0; cursor: pointer; }
+
+/* ---------- Página do personagem ---------- */
+
+.voltar-ficha { display: inline-block; margin-bottom: 14px; color: var(--texto-2); text-decoration: none; }
+.voltar-ficha:hover { color: var(--ouro-2); }
+
+.ficha-topo {
+  --cor: var(--ouro);
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* A imagem inteira, com a mesma imagem desfocada atrás preenchendo as sobras */
+.retrato-grande {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  max-height: 75vh;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  background: color-mix(in srgb, var(--cor) 25%, var(--bg-2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cor) 40%, transparent), 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.retrato-grande::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  background: var(--img) center / cover no-repeat;
+  filter: blur(24px) brightness(0.5);
+}
+
+.retrato-grande img {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+.retrato-grande .marca-dagua {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 7rem;
+  font-weight: 700;
+  color: var(--cor);
+  opacity: 0.35;
+}
+
+.ficha-info h1 { margin: 0 0 4px; font-size: clamp(1.8rem, 3.5vw, 2.8rem); color: color-mix(in srgb, var(--cor) 50%, #fff); }
+.ficha-classe { margin: 0 0 14px; color: var(--texto-2); font-size: 1.1rem; }
+.ficha-selos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+.selo-ficha {
+  padding: 4px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--texto);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.selo-ficha.campanha { border-color: var(--cor-camp); }
+a.selo-ficha:hover { background: var(--bg-2); }
+
+.ficha-resumo { font-size: 1.05rem; line-height: 1.6; white-space: pre-wrap; margin: 0 0 18px; }
+.ficha-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.dica-retrato { font-size: 0.8rem; margin-top: 8px; }
+
+.ficha-secoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.ficha-secoes > .vazio { grid-column: 1 / -1; }
+
+.secao-ficha {
+  background: var(--card);
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--cor);
+  border-radius: var(--raio);
+  padding: 16px 20px;
+}
+
+.secao-ficha h2 { margin: 0 0 8px; font-size: 1.15rem; color: color-mix(in srgb, var(--cor) 50%, #fff); }
+.secao-ficha p { margin: 0; white-space: pre-wrap; line-height: 1.6; }
+
+/* Formulário do personagem: maior, por causa das seções */
+dialog.modal-personagem { width: min(640px, calc(100vw - 32px)); }
+
+.secoes-edicao { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 8px; }
+
+.secao-edicao {
+  padding: 10px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--bg-2);
+}
+
+.cabeca-secao { display: flex; gap: 6px; align-items: center; }
+.cabeca-secao input { margin: 0; font-weight: 600; }
+.secao-edicao textarea { margin-top: 6px; background: var(--bg); }
+.sugestoes-secoes { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.link-pagina { display: inline-block; margin: -8px 0 14px; color: var(--ouro-2); font-size: 0.9rem; }
+
+@media (max-width: 800px) {
+  .ficha-topo { grid-template-columns: 1fr; }
+  .ficha-secoes { grid-template-columns: 1fr; }
+}
+
+/* Nome da campanha no canto do cartão, na cor dela */
+.personagem .etiqueta-campanha {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--cor, var(--ouro));
+  background: rgba(10, 8, 15, 0.7);
+  color: color-mix(in srgb, var(--cor, var(--ouro)) 55%, #fff);
+  text-shadow: none;
+}
+
+@media (max-width: 800px) {
+  .barra-fellas { flex-wrap: wrap; padding: 0; }
+  .barra-fellas .botoes-titulo { padding: 0 12px 10px; }
+}
+
 .abas { display: flex; gap: 4px; border-bottom: 1px solid var(--borda); margin-bottom: 16px; }
 
 .abas button {
@@ -733,18 +1059,21 @@ body.pagina-campanha { min-height: 100vh; display: flex; flex-direction: column;
   .banner .sobre-banner { padding: 60px 16px 18px; }
 }
 
-@media (max-width: 700px) {
-  .calendario .dia { min-height: 64px; padding: 3px; }
-  .evento { font-size: 0.65rem; padding: 1px 3px; }
-  .navegacao-mes h2 { min-width: 0; font-size: 1.1rem; }
-  .duas-colunas { grid-template-columns: 1fr; }
-  .topo { flex-direction: column; }
-
-  /* No celular as divisórias ficam uma embaixo da outra e o texto aparece sempre */
+/* Telas estreitas: as divisórias da home ficam uma embaixo da outra e o texto aparece sempre */
+@media (max-width: 900px) {
   .divisorias { flex-direction: column; }
   .divisoria { border-right: none; border-bottom: 1px solid var(--borda); gap: 6px; }
   .divisoria:last-child { border-bottom: none; }
   .divisoria .icone { font-size: 2.6rem; }
   .divisoria small { opacity: 1; transform: none; font-size: 0.9rem; }
   .divisoria::after { font-size: 9rem; }
+  .divisoria .titulo { font-size: clamp(1.4rem, 5vw, 2rem); }
+}
+
+@media (max-width: 700px) {
+  .calendario .dia { min-height: 64px; padding: 3px; }
+  .evento { font-size: 0.65rem; padding: 1px 3px; }
+  .navegacao-mes h2 { min-width: 0; font-size: 1.1rem; }
+  .duas-colunas { grid-template-columns: 1fr; }
+  .topo { flex-direction: column; }
 }
